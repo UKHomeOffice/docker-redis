@@ -1,0 +1,45 @@
+apiVersion: v1
+kind: ReplicationController
+metadata:
+  name: redis
+spec:
+  replicas: 1
+  selector:
+    name: redis
+  template:
+    metadata:
+      labels:
+        name: redis
+    spec:
+      containers:
+      - name: redis
+        image: ukhomeofficedigital/redis:latest
+        ports:
+        - containerPort: 6379
+        command:
+        - "/usr/bin/bash"
+        - "-c"
+        - "/run.sh ${REDIS_SENTINEL_SERVICE_HOST} ${REDIS_SENTINEL_SERVICE_PORT}"
+        resources:
+          limits:
+            cpu: "0.1"
+        volumeMounts:
+        - mountPath: /var/lib/redis
+          name: data
+      - name: redis-sentinel
+        image: ukhomeofficedigital/redis:latest
+        ports:
+        - containerPort: 26379
+        command:
+        - "/usr/bin/bash"
+        - "-c"
+        - "/run.sh ${REDIS_SENTINEL_SERVICE_HOST} ${REDIS_SENTINEL_SERVICE_PORT}"
+        env:
+        - name: SENTINEL
+          value: "true"
+        resources:
+          limits:
+            cpu: "0.1"
+      volumes:
+        - name: data
+          emptyDir: {}
