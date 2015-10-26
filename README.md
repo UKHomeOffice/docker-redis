@@ -1,5 +1,7 @@
 # docker-redis
 
+[![Build Status](https://travis-ci.org/UKHomeOffice/docker-redis.svg?branch=master)](https://travis-ci.org/UKHomeOffice/docker-redis)
+
 Docker image for redis. This image is designed to be used with kubernetes, it
 may work outside kubernetes as well.
 
