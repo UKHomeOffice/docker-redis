@@ -12,6 +12,6 @@ RUN chown redis:redis /run.sh && \
     chown redis:redis /etc/redis-sentinel.conf
 
 # Set user to be the redis UID
-USER 995
+USER 994
 
 CMD /usr/bin/bash -c "/run.sh ${SENTINEL_HOST} ${SENTINEL_PORT}"
