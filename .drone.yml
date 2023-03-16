@@ -1,37 +1,64 @@
-pipeline:
+---
+kind: pipeline
+type: kubernetes
+name: default
 
-  build_docker_image:
-    image: docker:17.09.1
-    environment:
-      - DOCKER_HOST=tcp://172.17.0.1:2375
-    commands:
-      - docker build -t redis:$${DRONE_COMMIT_SHA} . --no-cache
+platform:
+  os: linux
+  arch: amd64
 
-  latest_image_to_quay:
-    image: docker:17.09.1
-    secrets:
-      - docker_password
-    environment:
-      - DOCKER_HOST=tcp://172.17.0.1:2375
-    commands:
-      - docker login -u="ukhomeofficedigital+drone_docker_redis" -p="$${DOCKER_PASSWORD}" quay.io
-      - docker tag redis:$${DRONE_COMMIT_SHA} quay.io/ukhomeofficedigital/redis:latest
-      - docker tag redis:$${DRONE_COMMIT_SHA} quay.io/ukhomeofficedigital/redis:$${DRONE_COMMIT_SHA}
-      - docker push quay.io/ukhomeofficedigital/redis:latest
-      - docker push quay.io/ukhomeofficedigital/redis:$${DRONE_COMMIT_SHA}
-    when:
-      event: push
-      branch: master
+steps:
+- name: build-image
+  image: 340268328991.dkr.ecr.eu-west-2.amazonaws.com/acp/dind
+  commands:
+  # wait for docker service to be up before running docker build
+  - n=0; while [ "$n" -lt 60 ] && [ ! "$(docker stats --no-stream)" ]; do n=$(( n + 1 )); sleep 1; done
+  - docker build -t redis:$${DRONE_COMMIT_SHA} . --no-cache
+  when:
+    event:
+    - tag
+    - push
 
-  tag_image_to_quay:
-    image: docker:17.09.1
-    secrets:
-      - docker_password
-    environment:
-      - DOCKER_HOST=tcp://172.17.0.1:2375
-    commands:
-      - docker login -u="ukhomeofficedigital+drone_docker_redis" -p="$${DOCKER_PASSWORD}" quay.io
-      - docker tag redis:$${DRONE_COMMIT_SHA} quay.io/ukhomeofficedigital/redis:$${DRONE_TAG}
-      - docker push quay.io/ukhomeofficedigital/redis:$${DRONE_TAG}
-    when:
-      event: tag
+- name: scan-image
+  image: 340268328991.dkr.ecr.eu-west-2.amazonaws.com/acp/anchore-submission:latest
+  pull: always
+  environment:
+    IMAGE_NAME: redis:${DRONE_COMMIT_SHA}
+    FAIL_ON_DETECTION: false
+  when:
+    event:
+      exclude:
+        - tag
+        - pull_request
+
+- name: deploy_image
+  image: 340268328991.dkr.ecr.eu-west-2.amazonaws.com/acp/dind
+  commands:
+  - docker login -u="ukhomeofficedigital+drone_docker_redis" -p=$${DOCKER_PASSWORD} quay.io
+  - docker tag redis:$${DRONE_COMMIT_SHA} quay.io/ukhomeofficedigital/redis:$${DRONE_TAG}
+  - docker push quay.io/ukhomeofficedigital/redis:$${DRONE_TAG}
+  environment:
+    DOCKER_PASSWORD:
+      from_secret: docker_password
+  when:
+    event:
+    - tag
+
+services:
+- name: docker
+  image: 340268328991.dkr.ecr.eu-west-2.amazonaws.com/acp/dind
+  when:
+    event:
+      exclude:
+        - pull_request
+
+- name: anchore-submission-server
+  image: 340268328991.dkr.ecr.eu-west-2.amazonaws.com/acp/anchore-submission:latest
+  pull: always
+  commands:
+    - /run.sh server
+  when:
+    event:
+      exclude:
+        - tag
+        - pull_request
