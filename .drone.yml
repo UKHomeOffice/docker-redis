@@ -36,9 +36,9 @@ steps:
   commands:
   - docker login -u="ukhomeofficedigital+drone_docker_redis" -p=$${DOCKER_PASSWORD} quay.io
   - docker tag redis:$${DRONE_COMMIT_SHA} quay.io/ukhomeofficedigital/redis:$${DRONE_TAG}
-  - docker tag redis:$${DRONE_COMMIT_SHA} quay.io/ukhomeofficedigital/redis:v6.2.12-1.fc36
+  - docker tag redis:$${DRONE_COMMIT_SHA} quay.io/ukhomeofficedigital/redis:v6.2.12-1
   - docker push quay.io/ukhomeofficedigital/redis:$${DRONE_TAG}
-  - docker push quay.io/ukhomeofficedigital/redis:v6.2.12-1.fc36
+  - docker push quay.io/ukhomeofficedigital/redis:v6.2.12-1
   environment:
     DOCKER_PASSWORD:
       from_secret: docker_password
@@ -64,3 +64,4 @@ services:
       exclude:
         - tag
         - pull_request
+    
