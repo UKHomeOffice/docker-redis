@@ -11,6 +11,16 @@ spec:
       labels:
         name: redis
     spec:
+      initContainers:
+      - name: init-redis
+        image: fedora:36
+        command:
+        - /bin/sh
+        - -c
+        - chown -R 998:998 /var/lib/redis && chmod -R 755 /var/lib/redis
+        volumeMounts:
+        - mountPath: /var/lib/redis
+          name: data
       containers:
       - name: redis
         image: ukhomeofficedigital/redis:latest
