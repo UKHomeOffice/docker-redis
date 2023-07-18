@@ -13,7 +13,7 @@ spec:
     spec:
       containers:
       - name: redis
-        image: ukhomeofficedigital/redis:latest
+        image: ukhomeofficedigital/redis:v6.2.12-1
         ports:
         - containerPort: 6379
         command:
@@ -27,7 +27,7 @@ spec:
         - mountPath: /var/lib/redis
           name: data
       - name: redis-sentinel
-        image: ukhomeofficedigital/redis:latest
+        image: ukhomeofficedigital/redis:v6.2.12-1
         ports:
         - containerPort: 26379
         command:
